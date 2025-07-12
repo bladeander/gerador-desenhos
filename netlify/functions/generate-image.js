@@ -15,8 +15,7 @@ exports.handler = async function(event) {
     const rulesPrompt = "MOST IMPORTANT RULE: The drawing MUST NOT contain any words, letters, numbers, or text of any kind. NO TEXT. NO WRITING. NO LETTERS. The image must be purely visual, with no characters or symbols.";
     const fullPrompt = `${stylePrompt} The theme is: ${prompt}. ${rulesPrompt}`;
 
-    // CORREÇÃO: A estrutura do payload foi ajustada para corresponder ao que a API espera.
-    // 'negative_prompt' foi movido para dentro de 'parameters' e renomeado para 'negativePrompt'.
+    // CORREÇÃO FINAL: O payload foi simplificado, removendo o 'negativePrompt' que estava a causar instabilidade.
     const imagePayload = {
       instances: [
         { 
@@ -24,8 +23,7 @@ exports.handler = async function(event) {
         }
       ],
       parameters: {
-        sampleCount: 1,
-        negativePrompt: "text, words, letters, writing, captions, labels, signs, alphabet, numbers, characters, script, font, typography, logo, watermark, signature, brand name"
+        sampleCount: 1
       }
     };
 
