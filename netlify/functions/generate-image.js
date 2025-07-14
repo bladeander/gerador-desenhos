@@ -27,8 +27,8 @@ exports.handler = async function(event) {
     
     const imageApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
     
-    // CORREÇÃO: Simplificação do prompt para aumentar a estabilidade.
-    const fullPrompt = `coloring book page for kids, thick bold black outlines, clean lines, whimsical and cute, kawaii style, no text, no words, no letters. Theme: ${prompt}`;
+    // CORREÇÃO FINAL: Prompt drasticamente simplificado para máxima estabilidade.
+    const fullPrompt = `coloring book page, ${prompt}, simple, black and white, thick outlines, no words, cute, kawaii`;
 
     const imagePayload = {
       instances: [
