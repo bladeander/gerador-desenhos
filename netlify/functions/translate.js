@@ -1,8 +1,24 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event) {
+  // Cabeçalhos de permissão (CORS)
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  // Responde ao pedido "preflight" do navegador
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers,
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return { statusCode: 405, headers, body: 'Method Not Allowed' };
   }
   try {
     const { textToTranslate } = JSON.parse(event.body);
@@ -31,11 +47,11 @@ exports.handler = async function(event) {
     
     const result = await response.json();
 
-    // Verificação de segurança para evitar erros
     if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
         const translatedText = result.candidates[0].content.parts[0].text.trim();
         return {
             statusCode: 200,
+            headers,
             body: JSON.stringify({ translatedText })
         };
     } else {
@@ -44,6 +60,6 @@ exports.handler = async function(event) {
     }
   } catch (error) {
     console.error("Erro na função Translate:", error);
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
   }
 };
