@@ -1,8 +1,24 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event) {
+  // Cabeçalhos de permissão (CORS)
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  // Responde ao pedido "preflight" do navegador
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers,
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return { statusCode: 405, headers, body: 'Method Not Allowed' };
   }
   try {
     const { prompt } = JSON.parse(event.body);
@@ -40,10 +56,10 @@ exports.handler = async function(event) {
     
     const result = await imageResponse.json();
 
-    // Verificação de segurança para evitar erros
     if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
         return {
             statusCode: 200,
+            headers,
             body: JSON.stringify(result)
         };
     } else {
@@ -52,6 +68,6 @@ exports.handler = async function(event) {
     }
   } catch (error) {
     console.error("Erro na função Generate-Image:", error);
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
   }
 };
