@@ -15,7 +15,6 @@ exports.handler = async function(event) {
     const rulesPrompt = "MOST IMPORTANT RULE: The drawing MUST NOT contain any words, letters, numbers, or text of any kind. NO TEXT. NO WRITING. NO LETTERS. The image must be purely visual, with no characters or symbols.";
     const fullPrompt = `${stylePrompt} The theme is: ${prompt}. ${rulesPrompt}`;
 
-    // CORREÇÃO FINAL: O payload foi simplificado, removendo o 'negativePrompt' que estava a causar instabilidade.
     const imagePayload = {
       instances: [
         { 
@@ -35,17 +34,24 @@ exports.handler = async function(event) {
 
     if (!imageResponse.ok) {
       const errorBody = await imageResponse.text();
-      console.error("Google API Error:", errorBody);
+      console.error("Google API Error (Image):", errorBody);
       throw new Error('A API da Google retornou um erro na geração da imagem.');
     }
     
     const result = await imageResponse.json();
-    return {
-      statusCode: 200,
-      body: JSON.stringify(result)
-    };
+
+    // Verificação de segurança para evitar erros
+    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+        return {
+            statusCode: 200,
+            body: JSON.stringify(result)
+        };
+    } else {
+        console.error("Resposta inesperada da API (Image):", JSON.stringify(result));
+        throw new Error('A resposta da API de imagem não teve o formato esperado.');
+    }
   } catch (error) {
-    console.error("Function Error:", error);
+    console.error("Erro na função Generate-Image:", error);
     return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
   }
 };
