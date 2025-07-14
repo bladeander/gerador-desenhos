@@ -27,9 +27,8 @@ exports.handler = async function(event) {
     
     const imageApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
     
-    const stylePrompt = "A whimsical and cute coloring book page for kids. Use thick bold black outlines and clean lines. The scene should be clear and simple, with a few large main elements and plenty of space for coloring.";
-    const rulesPrompt = "MOST IMPORTANT RULE: The drawing MUST NOT contain any words, letters, numbers, or text of any kind. NO TEXT. NO WRITING. NO LETTERS. The image must be purely visual, with no characters or symbols.";
-    const fullPrompt = `${stylePrompt} The theme is: ${prompt}. ${rulesPrompt}`;
+    // CORREÇÃO: Simplificação do prompt para aumentar a estabilidade.
+    const fullPrompt = `coloring book page for kids, thick bold black outlines, clean lines, whimsical and cute, kawaii style, no text, no words, no letters. Theme: ${prompt}`;
 
     const imagePayload = {
       instances: [
