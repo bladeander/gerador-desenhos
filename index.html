@@ -1,42 +1,48 @@
+<!-- ================================================================================= -->
+<!-- FICHEIRO: index.html (NOVA VERSÃO)                                                -->
+<!-- Copie e cole todo este conteúdo para o seu ficheiro index.html, substituindo o antigo. -->
+<!-- ================================================================================= -->
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Desenhos Fofos</title>
+    <title>Gerador de Desenhos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .loader {
-            border-top-color: #3498db;
-            -webkit-animation: spin 1s linear infinite;
-            animation: spin 1s linear infinite;
-        }
-        @-webkit-keyframes spin {
-            0% { -webkit-transform: rotate(0deg); }
-            100% { -webkit-transform: rotate(360deg); }
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-pink-50 text-gray-800">
-
+<body class="bg-gray-100 text-gray-800">
     <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-2xl">
         <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 text-center">
             
-            <!-- Cabeçalho -->
-            <h1 class="text-3xl sm:text-4xl font-bold text-pink-500 mb-2">Gerador de Desenhos Fofos</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">Gerador de Desenhos</h1>
             <p class="text-gray-500 mb-6 text-lg">Para Colorir</p>
 
-            <!-- Formulário de Entrada -->
+            <!-- NOVO: Seletor de Estilo -->
+            <div class="mb-6">
+                <label class="block text-lg font-medium text-gray-700 mb-3">1. Escolha o Estilo:</label>
+                <div class="flex justify-center space-x-4" id="style-selector">
+                    <label class="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-lg cursor-pointer has-[:checked]:border-pink-500 has-[:checked]:bg-pink-50 transition-all">
+                        <input type="radio" name="style" value="bobbie_goods" class="form-radio text-pink-500 focus:ring-pink-500" checked>
+                        <span class="font-medium text-gray-700">Bobbie Goods</span>
+                    </label>
+                    <label class="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-lg cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 transition-all">
+                        <input type="radio" name="style" value="marvel" class="form-radio text-blue-500 focus:ring-blue-500">
+                        <span class="font-medium text-gray-700">Marvel</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Campo para o tema -->
             <div class="mb-4">
-                <input type="text" id="userInput" class="w-full px-4 py-3 border-2 border-pink-200 rounded-lg focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none transition" placeholder="Digite um tema em português (ex: cãozinho a brincar na chuva)">
+                 <label for="userInput" class="block text-lg font-medium text-gray-700 mb-3">2. Digite o Tema:</label>
+                <input type="text" id="userInput" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none transition" placeholder="Ex: um gato a ler um livro ou Homem-Aranha">
             </div>
 
             <!-- Botão de Gerar -->
@@ -45,11 +51,9 @@
             </button>
 
             <!-- Área de Geração da Imagem -->
-            <div id="imageContainer" class="mt-8 p-4 border-2 border-dashed border-pink-200 rounded-2xl min-h-[300px] sm:min-h-[400px] flex justify-center items-center bg-pink-50/50">
+            <div id="imageContainer" class="mt-8 p-4 border-2 border-dashed border-gray-200 rounded-2xl min-h-[300px] sm:min-h-[400px] flex justify-center items-center bg-gray-50/50">
                 <div id="placeholder" class="text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                     <p>O seu desenho para colorir aparecerá aqui!</p>
                 </div>
                 <div id="loader" class="hidden flex-col items-center justify-center">
@@ -63,12 +67,9 @@
             <a id="downloadBtn" href="#" class="hidden mt-4 inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">
                 Descarregar Desenho
             </a>
-
         </div>
     </div>
-
- <script>
-    // Seleciona os elementos da página
+<script>
     const generateBtn = document.getElementById('generateBtn');
     const userInput = document.getElementById('userInput');
     const imageContainer = document.getElementById('imageContainer');
@@ -76,18 +77,14 @@
     const loader = document.getElementById('loader');
     const generatedImage = document.getElementById('generatedImage');
     const downloadBtn = document.getElementById('downloadBtn');
-
-    // Adiciona o evento de clique ao botão
-    generateBtn.addEventListener('click', generateImage);
     
-    // Permite gerar com a tecla Enter
+    generateBtn.addEventListener('click', generateImage);
     userInput.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') {
             generateImage();
         }
     });
 
-    // Função principal para gerar a imagem
     async function generateImage() {
         const userPrompt = userInput.value.trim();
         if (!userPrompt) {
@@ -95,11 +92,18 @@
             return;
         }
 
+        // NOVO: Obtém o estilo selecionado
+        const selectedStyle = document.querySelector('input[name="style"]:checked').value;
+
         setLoading(true);
 
         try {
-            // Passo 1: Chamar a NOSSA função de tradução no backend
-            const translateResponse = await fetch('/.netlify/functions/translate', {
+            // CORREÇÃO: Constrói um URL absoluto para evitar erros de parsing.
+            const baseUrl = window.location.origin.includes('http') ? window.location.origin : 'https://' + window.location.host;
+            
+            // Passo 1: Chamar a função de tradução no backend
+            const translateUrl = new URL('/.netlify/functions/translate', baseUrl);
+            const translateResponse = await fetch(translateUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ textToTranslate: userPrompt })
@@ -107,26 +111,31 @@
             if (!translateResponse.ok) throw new Error('Falha ao contactar o servidor de tradução.');
             const { translatedText } = await translateResponse.json();
 
-            // Passo 2: Chamar a NOSSA função de geração de imagem no backend
-            const imageResponse = await fetch('/.netlify/functions/generate-image', {
+            // Passo 2: Chamar a função de geração de imagem, passando o estilo
+            const imageUrl = new URL('/.netlify/functions/generate-image', baseUrl);
+            const imageResponse = await fetch(imageUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: translatedText })
+                body: JSON.stringify({ prompt: translatedText, style: selectedStyle }) // Envia o estilo
             });
             if (!imageResponse.ok) throw new Error('Falha ao contactar o servidor de imagem.');
             const result = await imageResponse.json();
             
             // Passo 3: Processar a resposta e exibir a imagem
             if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-                const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-                generatedImage.src = imageUrl;
-                downloadBtn.href = imageUrl;
-                downloadBtn.download = `desenho_fofo_${userPrompt.replace(/\s+/g, '_')}.png`;
+                const imageUrlData = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                generatedImage.src = imageUrlData;
+                downloadBtn.href = imageUrlData;
+                downloadBtn.download = `${selectedStyle}_${userPrompt.replace(/\s+/g, '_')}.png`;
                 
                 generatedImage.classList.remove('hidden');
                 downloadBtn.classList.remove('hidden');
                 placeholder.classList.add('hidden');
             } else {
+                if (result.error) {
+                   console.error("API Error Message:", result.error.message);
+                   throw new Error(`A API retornou um erro: ${result.error.message}`);
+                }
                 throw new Error('A resposta do servidor não continha uma imagem válida.');
             }
 
@@ -139,7 +148,6 @@
         }
     }
 
-    // Função para controlar o estado de carregamento da UI
     function setLoading(isLoading) {
         generateBtn.disabled = isLoading;
         if (isLoading) {
@@ -156,3 +164,88 @@
 </script>
 </body>
 </html>
+
+<!-- ================================================================================= -->
+<!-- FICHEIRO: netlify/functions/generate-image.js (NOVA VERSÃO)                     -->
+<!-- Copie e cole todo este conteúdo para o seu ficheiro generate-image.js.          -->
+<!-- ================================================================================= -->
+
+const fetch = require('node-fetch');
+
+exports.handler = async function(event) {
+  // Cabeçalhos de permissão (CORS)
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  // Responde ao pedido "preflight" do navegador
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers,
+      body: ''
+    };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: 'Method Not Allowed' };
+  }
+  try {
+    // NOVO: Obtém o prompt e o estilo do pedido
+    const { prompt, style } = JSON.parse(event.body);
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) throw new Error('A chave de API não está configurada no servidor.');
+    
+    const imageApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+    
+    let fullPrompt = '';
+
+    // Define o prompt com base no estilo escolhido
+    if (style === 'marvel') {
+        fullPrompt = `Marvel comic book style coloring page for kids, ${prompt}, dynamic action pose, clean lines, black and white, no words, no text, no letters.`;
+    } else { // O padrão é Bobbie Goods
+        fullPrompt = `coloring book page for kids, thick bold black outlines, clean lines, whimsical and cute, kawaii style, no text, no words, no letters. Theme: ${prompt}`;
+    }
+
+    const imagePayload = {
+      instances: [
+        { 
+          prompt: fullPrompt
+        }
+      ],
+      parameters: {
+        sampleCount: 1
+      }
+    };
+
+    const imageResponse = await fetch(imageApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(imagePayload)
+    });
+
+    if (!imageResponse.ok) {
+      const errorBody = await imageResponse.text();
+      console.error("Google API Error (Image):", errorBody);
+      throw new Error('A API da Google retornou um erro na geração da imagem.');
+    }
+    
+    const result = await imageResponse.json();
+
+    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify(result)
+        };
+    } else {
+        console.error("Resposta inesperada da API (Image):", JSON.stringify(result));
+        throw new Error('A resposta da API de imagem não teve o formato esperado.');
+    }
+  } catch (error) {
+    console.error("Erro na função Generate-Image:", error);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+  }
+};
