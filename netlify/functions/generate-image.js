@@ -1,3 +1,7 @@
+<!-- ================================================================================= -->
+<!-- FICHEIRO: netlify/functions/generate-image.js (NOVA VERSÃO)                     -->
+<!-- Copie e cole todo este conteúdo para o seu ficheiro generate-image.js.          -->
+<!-- ================================================================================= -->
 
 const { getDeployStore } = require('@netlify/blobs');
 const fetch = require('node-fetch');
