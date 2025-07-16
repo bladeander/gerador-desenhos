@@ -1,8 +1,3 @@
-<!-- ================================================================================= -->
-<!-- FICHEIRO: index.html (NOVA VERSÃO)                                                -->
-<!-- Copie e cole todo este conteúdo para o seu ficheiro index.html, substituindo o antigo. -->
-<!-- ================================================================================= -->
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -15,20 +10,10 @@
         body { font-family: 'Inter', sans-serif; }
         .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Estilos para impressão */
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            #print-section, #print-section * {
-                visibility: visible;
-            }
-            #print-section {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
+            body * { visibility: hidden; }
+            #print-section, #print-section * { visibility: visible; }
+            #print-section { position: absolute; left: 0; top: 0; width: 100%; }
         }
     </style>
 </head>
@@ -39,7 +24,6 @@
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">Gerador de Desenhos</h1>
             <p class="text-gray-500 mb-6 text-lg">Para Colorir</p>
 
-            <!-- Seletor de Estilo -->
             <div class="mb-6">
                 <label class="block text-lg font-medium text-gray-700 mb-3">1. Escolha o Estilo:</label>
                 <div class="flex justify-center space-x-4" id="style-selector">
@@ -49,23 +33,20 @@
                     </label>
                     <label class="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-lg cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 transition-all">
                         <input type="radio" name="style" value="marvel" class="form-radio text-blue-500 focus:ring-blue-500">
-                        <span class="font-medium text-gray-700">Herois</span>
+                        <span class="font-medium text-gray-700">Marvel</span>
                     </label>
                 </div>
             </div>
 
-            <!-- Campo para o tema -->
             <div class="mb-4">
-                 <label for="userInput" class="block text-lg font-medium text-gray-700 mb-3">2. Digite o Tema:</label>
+                 <label for="userInput" class="block text-lg font-medium text-gray-700 mb-3">2. Digite o Tema (em Português):</label>
                 <input type="text" id="userInput" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none transition" placeholder="Ex: um gato a ler um livro ou Homem-Aranha">
             </div>
 
-            <!-- Botão de Gerar -->
-            <button id="generateBtn" class="w-full bg-pink-500 hover:bg-blue-300 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
+            <button id="generateBtn" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
                 Gerar Desenho
             </button>
 
-            <!-- Área de Geração da Imagem -->
             <div id="imageContainer" class="mt-8 p-4 border-2 border-dashed border-gray-200 rounded-2xl min-h-[300px] sm:min-h-[400px] flex justify-center items-center bg-gray-50/50">
                 <div id="placeholder" class="text-gray-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -73,19 +54,17 @@
                 </div>
                 <div id="loader" class="hidden flex-col items-center justify-center">
                     <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-12 w-12 mb-4"></div>
-                    <p class="text-gray-500">A traduzir e a desenhar algo bem giro...</p>
+                    <p class="text-gray-500">A desenhar algo bem giro...</p>
                 </div>
                 <div id="print-section">
                     <img id="generatedImage" class="hidden max-w-full max-h-full rounded-lg" alt="Desenho gerado pelo utilizador para colorir">
                 </div>
             </div>
             
-            <!-- Botões de Ação -->
             <div id="action-buttons" class="mt-4 space-x-4">
                 <a id="downloadBtn" href="#" class="hidden inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">
                     Descarregar
                 </a>
-                <!-- NOVO: Botão de Imprimir -->
                 <button id="printBtn" class="hidden inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">
                     Imprimir
                 </button>
@@ -95,7 +74,6 @@
 <script>
     const generateBtn = document.getElementById('generateBtn');
     const userInput = document.getElementById('userInput');
-    const imageContainer = document.getElementById('imageContainer');
     const placeholder = document.getElementById('placeholder');
     const loader = document.getElementById('loader');
     const generatedImage = document.getElementById('generatedImage');
@@ -126,26 +104,16 @@
         try {
             const baseUrl = window.location.origin.includes('http') ? window.location.origin : 'https://' + window.location.host;
             
-            const translateUrl = new URL('/.netlify/functions/translate', baseUrl);
-            const translateResponse = await fetch(translateUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ textToTranslate: userPrompt })
-            });
-            if (!translateResponse.ok) throw new Error('Falha ao contactar o servidor de tradução.');
-            const { translatedText } = await translateResponse.json();
-
             const imageUrl = new URL('/.netlify/functions/generate-image', baseUrl);
             const imageResponse = await fetch(imageUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: translatedText, style: selectedStyle })
+                body: JSON.stringify({ prompt: userPrompt, style: selectedStyle }) // Envia o texto original em português
             });
             
-            // ATUALIZADO: Lida com o erro de limite de uso (429)
             if (imageResponse.status === 429) {
                 const errorResult = await imageResponse.json();
-                throw new Error(errorResult.error); // Lança um erro com a mensagem do servidor
+                throw new Error(errorResult.error);
             }
             
             if (!imageResponse.ok) throw new Error('Falha ao contactar o servidor de imagem.');
@@ -163,7 +131,6 @@
                 placeholder.classList.add('hidden');
             } else {
                 if (result.error) {
-                   console.error("API Error Message:", result.error.message);
                    throw new Error(`A API retornou um erro: ${result.error.message}`);
                 }
                 throw new Error('A resposta do servidor não continha uma imagem válida.');
@@ -171,7 +138,6 @@
 
         } catch (error) {
             console.error('Erro no processo:', error);
-            // ATUALIZADO: Mostra a mensagem de erro específica vinda do servidor
             placeholder.innerHTML = `<p class="text-red-500">${error.message || 'Ops! Algo deu errado. Por favor, tente novamente.'}</p>`;
             placeholder.classList.remove('hidden');
         } finally {
@@ -185,7 +151,7 @@
             generatedImage.classList.add('hidden');
             downloadBtn.classList.add('hidden');
             printBtn.classList.add('hidden');
-            placeholder.classList.remove('hidden'); // Garante que o placeholder está visível para mostrar erros
+            placeholder.classList.remove('hidden');
             loader.classList.add('hidden');
             generateBtn.innerText = 'Gerar Desenho';
         } else {
@@ -193,7 +159,6 @@
             generateBtn.innerText = 'Gerar Desenho';
         }
         
-        // Lógica de carregamento
         if (isLoading) {
             placeholder.classList.add('hidden');
             loader.classList.remove('hidden');
