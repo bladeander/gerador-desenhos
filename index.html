@@ -15,6 +15,21 @@
         body { font-family: 'Inter', sans-serif; }
         .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Estilos para impressão */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-section, #print-section * {
+                visibility: visible;
+            }
+            #print-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -24,7 +39,7 @@
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">Gerador de Desenhos</h1>
             <p class="text-gray-500 mb-6 text-lg">Para Colorir</p>
 
-            <!-- NOVO: Seletor de Estilo -->
+            <!-- Seletor de Estilo -->
             <div class="mb-6">
                 <label class="block text-lg font-medium text-gray-700 mb-3">1. Escolha o Estilo:</label>
                 <div class="flex justify-center space-x-4" id="style-selector">
@@ -60,13 +75,21 @@
                     <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-12 w-12 mb-4"></div>
                     <p class="text-gray-500">A traduzir e a desenhar algo bem giro...</p>
                 </div>
-                <img id="generatedImage" class="hidden max-w-full max-h-full rounded-lg" alt="Desenho gerado pelo utilizador para colorir">
+                <div id="print-section">
+                    <img id="generatedImage" class="hidden max-w-full max-h-full rounded-lg" alt="Desenho gerado pelo utilizador para colorir">
+                </div>
             </div>
             
-            <!-- Botão de Download -->
-            <a id="downloadBtn" href="#" class="hidden mt-4 inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">
-                Descarregar Desenho
-            </a>
+            <!-- Botões de Ação -->
+            <div id="action-buttons" class="mt-4 space-x-4">
+                <a id="downloadBtn" href="#" class="hidden inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">
+                    Descarregar
+                </a>
+                <!-- NOVO: Botão de Imprimir -->
+                <button id="printBtn" class="hidden inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-md">
+                    Imprimir
+                </button>
+            </div>
         </div>
     </div>
 <script>
@@ -77,12 +100,17 @@
     const loader = document.getElementById('loader');
     const generatedImage = document.getElementById('generatedImage');
     const downloadBtn = document.getElementById('downloadBtn');
+    const printBtn = document.getElementById('printBtn'); // NOVO
     
     generateBtn.addEventListener('click', generateImage);
     userInput.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') {
             generateImage();
         }
+    });
+    // NOVO: Evento para o botão de imprimir
+    printBtn.addEventListener('click', () => {
+        window.print();
     });
 
     async function generateImage() {
@@ -92,16 +120,13 @@
             return;
         }
 
-        // NOVO: Obtém o estilo selecionado
         const selectedStyle = document.querySelector('input[name="style"]:checked').value;
 
         setLoading(true);
 
         try {
-            // CORREÇÃO: Constrói um URL absoluto para evitar erros de parsing.
             const baseUrl = window.location.origin.includes('http') ? window.location.origin : 'https://' + window.location.host;
             
-            // Passo 1: Chamar a função de tradução no backend
             const translateUrl = new URL('/.netlify/functions/translate', baseUrl);
             const translateResponse = await fetch(translateUrl, {
                 method: 'POST',
@@ -111,17 +136,15 @@
             if (!translateResponse.ok) throw new Error('Falha ao contactar o servidor de tradução.');
             const { translatedText } = await translateResponse.json();
 
-            // Passo 2: Chamar a função de geração de imagem, passando o estilo
             const imageUrl = new URL('/.netlify/functions/generate-image', baseUrl);
             const imageResponse = await fetch(imageUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: translatedText, style: selectedStyle }) // Envia o estilo
+                body: JSON.stringify({ prompt: translatedText, style: selectedStyle })
             });
             if (!imageResponse.ok) throw new Error('Falha ao contactar o servidor de imagem.');
             const result = await imageResponse.json();
             
-            // Passo 3: Processar a resposta e exibir a imagem
             if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
                 const imageUrlData = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
                 generatedImage.src = imageUrlData;
@@ -130,6 +153,7 @@
                 
                 generatedImage.classList.remove('hidden');
                 downloadBtn.classList.remove('hidden');
+                printBtn.classList.remove('hidden'); // NOVO
                 placeholder.classList.add('hidden');
             } else {
                 if (result.error) {
@@ -153,6 +177,7 @@
         if (isLoading) {
             generatedImage.classList.add('hidden');
             downloadBtn.classList.add('hidden');
+            printBtn.classList.add('hidden'); // NOVO
             placeholder.classList.add('hidden');
             loader.classList.remove('hidden');
             generateBtn.innerText = 'A gerar...';
@@ -166,8 +191,8 @@
 </html>
 
 <!-- ================================================================================= -->
-<!-- FICHEIRO: netlify/functions/generate-image.js (NOVA VERSÃO)                     -->
-<!-- Copie e cole todo este conteúdo para o seu ficheiro generate-image.js.          -->
+<!-- FICHEIRO: netlify/functions/generate-image.js (INALTERADO)                      -->
+<!-- Este ficheiro não precisa de ser alterado.                                      -->
 <!-- ================================================================================= -->
 
 const fetch = require('node-fetch');
