@@ -1,10 +1,11 @@
-<!-- ================================================================================= -->
-<!-- FICHEIRO: netlify/functions/generate-image.js (NOVA VERSÃO)                     -->
-<!-- Copie e cole todo este conteúdo para o seu ficheiro generate-image.js.          -->
-<!-- ================================================================================= -->
-
-const { getDeployStore } = require('@netlify/blobs');
+const { Redis } = require('@upstash/redis');
 const fetch = require('node-fetch');
+
+// Configura a ligação ao Upstash Redis a partir das variáveis de ambiente
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 exports.handler = async function(event) {
   // Cabeçalhos de permissão (CORS)
@@ -14,46 +15,34 @@ exports.handler = async function(event) {
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
   };
 
-  // Responde ao pedido "preflight" do navegador
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
-      headers,
-      body: ''
-    };
+    return { statusCode: 204, headers, body: '' };
   }
 
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers, body: 'Method Not Allowed' };
   }
+
   try {
-    // LÓGICA DE CONTROLO POR IP
+    // LÓGICA DE CONTROLO POR IP COM UPSTASH REDIS
     const ip = event.headers['x-nf-client-connection-ip'];
-    const store = getDeployStore('rate-limit-store');
-    const ipData = await store.get(ip, { type: 'json' }) || { count: 0, timestamp: 0 };
+    const key = `rate-limit:${ip}`;
+    
+    let currentCount = await redis.get(key);
+    currentCount = currentCount ? parseInt(currentCount, 10) : 0;
 
-    const twentyFourHours = 24 * 60 * 60 * 1000;
-    const isOverTimeLimit = Date.now() - ipData.timestamp > twentyFourHours;
-
-    if (isOverTimeLimit) {
-      // Reinicia o contador se já passaram 24 horas
-      ipData.count = 0;
-      ipData.timestamp = Date.now();
-    }
-
-    if (ipData.count >= 10) {
-      // Bloqueia o pedido se o limite for atingido
+    if (currentCount >= 10) {
       return {
           statusCode: 429, // Too Many Requests
           headers,
-          body: JSON.stringify({ error: 'Limite de 10 imagens por dia atingido. Por favor, tente novamente em 24 horas.' })
+          body: JSON.stringify({ error: 'Limite de 10 imagens por dia atingido. Por favor, tente novamente mais tarde.' })
       };
     }
 
     // LÓGICA DE GERAÇÃO DE IMAGEM
     const { prompt, style } = JSON.parse(event.body);
     const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) throw new Error('A chave de API não está configurada no servidor.');
+    if (!apiKey) throw new Error('A chave de API da Google não está configurada no servidor.');
     
     const imageApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
     
@@ -77,16 +66,15 @@ exports.handler = async function(event) {
 
     if (!imageResponse.ok) {
       const errorBody = await imageResponse.text();
-      console.error("Google API Error (Image):", errorBody);
       throw new Error('A API da Google retornou um erro na geração da imagem.');
     }
     
     const result = await imageResponse.json();
 
     if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-        // Incrementa o contador e guarda no armazenamento
-        ipData.count++;
-        await store.setJSON(ip, ipData);
+        // Incrementa o contador no Redis e define uma expiração de 24 horas
+        await redis.incr(key);
+        await redis.expire(key, 86400); // 86400 segundos = 24 horas
 
         return {
             statusCode: 200,
@@ -94,11 +82,9 @@ exports.handler = async function(event) {
             body: JSON.stringify(result)
         };
     } else {
-        console.error("Resposta inesperada da API (Image):", JSON.stringify(result));
         throw new Error('A resposta da API de imagem não teve o formato esperado.');
     }
   } catch (error) {
-    console.error("Erro na função Generate-Image:", error);
     return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
   }
 };
