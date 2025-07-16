@@ -4,6 +4,6 @@
   "description": "Funções de backend para o gerador de desenhos",
   "dependencies": {
     "node-fetch": "^2.7.0",
-    "@netlify/blobs": "latest"
+    "@netlify/blobs": "^6.0.0"
   }
 }
