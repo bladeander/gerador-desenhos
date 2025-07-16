@@ -21,14 +21,21 @@ exports.handler = async function(event) {
     return { statusCode: 405, headers, body: 'Method Not Allowed' };
   }
   try {
-    const { prompt } = JSON.parse(event.body);
+    // NOVO: Obtém o prompt e o estilo do pedido
+    const { prompt, style } = JSON.parse(event.body);
     const apiKey = process.env.GOOGLE_API_KEY;
     if (!apiKey) throw new Error('A chave de API não está configurada no servidor.');
     
     const imageApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
     
-    // CORREÇÃO FINAL: Prompt drasticamente simplificado para máxima estabilidade.
-    const fullPrompt = `coloring book page, ${prompt}, simple, black and white, thick outlines, no words, cute, kawaii`;
+    let fullPrompt = '';
+
+    // Define o prompt com base no estilo escolhido
+    if (style === 'marvel') {
+        fullPrompt = `Marvel comic book style coloring page for kids, ${prompt}, dynamic action pose, clean lines, black and white, no words, no text, no letters.`;
+    } else { // O padrão é Bobbie Goods
+        fullPrompt = `coloring book page for kids, thick bold black outlines, clean lines, whimsical and cute, kawaii style, no text, no words, no letters. Theme: ${prompt}`;
+    }
 
     const imagePayload = {
       instances: [
