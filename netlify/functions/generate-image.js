@@ -32,9 +32,9 @@ exports.handler = async function(event) {
 
     // Define o prompt com base no estilo escolhido
     if (style === 'herois') {
-        fullPrompt = `Superhero comic book style coloring page for kids, ${prompt}, dynamic action pose, clean lines, black and white, no words, no text, no letters.`;
+        fullPrompt = `Superhero comic book style coloring page for kids, ${prompt}, dynamic action pose. IMPORTANT: All lines must be solid, closed, unbroken loops, suitable for a digital paint bucket tool. Clean black and white, no colors, no text.`;
     } else { // O padrão é Bobbie Goods
-        fullPrompt = `A Bobbie Goods style coloring page. Featuring cute, chubby animal characters like bears, dogs, and bunnies with simple, dot-like eyes and rosy cheeks. The scene should be filled with many small, charming objects related to the theme: ${prompt}. Use thick, bold, slightly imperfect black outlines. Whimsical, cozy, and kawaii aesthetic. Strictly black and white, no colors, no text.`;
+        fullPrompt = `A Bobbie Goods style coloring page. Featuring cute, chubby animal characters like bears, dogs, and bunnies with simple, dot-like eyes and rosy cheeks. The scene should be filled with many small, charming objects related to the theme: ${prompt}. Use thick, bold, slightly imperfect black outlines. IMPORTANT: All outlines must be solid, closed, unbroken loops, suitable for a digital paint bucket tool. Whimsical, cozy, and kawaii aesthetic. Strictly black and white, no colors, no text.`;
     }
 
     const imagePayload = {
