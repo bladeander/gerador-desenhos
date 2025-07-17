@@ -1,51 +1,58 @@
+const { Redis } = require('@upstash/redis');
 const fetch = require('node-fetch');
 
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
 exports.handler = async function(event) {
-  // Cabeçalhos de permissão (CORS)
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
   };
 
-  // Responde ao pedido "preflight" do navegador
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
-      headers,
-      body: ''
-    };
+    return { statusCode: 204, headers, body: '' };
   }
 
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers, body: 'Method Not Allowed' };
   }
+
   try {
-    // Obtém o prompt e o estilo do pedido
+    const ip = event.headers['x-nf-client-connection-ip'];
+    const key = `rate-limit:${ip}`;
+    
+    let currentCount = await redis.get(key);
+    currentCount = currentCount ? parseInt(currentCount, 10) : 0;
+
+    if (currentCount >= 10) {
+      return {
+          statusCode: 429,
+          headers,
+          body: JSON.stringify({ error: 'Limite de 10 imagens por dia atingido. Por favor, tente novamente mais tarde.' })
+      };
+    }
+
     const { prompt, style } = JSON.parse(event.body);
     const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) throw new Error('A chave de API não está configurada no servidor.');
+    if (!apiKey) throw new Error('A chave de API da Google não está configurada no servidor.');
     
     const imageApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
     
     let fullPrompt = '';
-
-    // Define o prompt com base no estilo escolhido
+    // ATUALIZADO: Prompts mais explícitos para garantir preto e branco.
     if (style === 'herois') {
-        fullPrompt = `Superhero comic book style coloring page for kids, ${prompt}, dynamic action pose. IMPORTANT: All lines must be solid, closed, unbroken loops, suitable for a digital paint bucket tool. Clean black and white, no colors, no text.`;
-    } else { // O padrão é Bobbie Goods
-        fullPrompt = `A Bobbie Goods style coloring page. Featuring cute, chubby animal characters like bears, dogs, and bunnies with simple, dot-like eyes and rosy cheeks. The scene should be filled with many small, charming objects related to the theme: ${prompt}. Use thick, bold, slightly imperfect black outlines. IMPORTANT: All outlines must be solid, closed, unbroken loops, suitable for a digital paint bucket tool. Whimsical, cozy, and kawaii aesthetic. Strictly black and white, no colors, no text.`;
+        fullPrompt = `black and white Marvel comic book style coloring page for kids, ${prompt}, dynamic action pose, clean lines, no colors, only black lines on a white background, no text, no words, no letters.`;
+    } else {
+        fullPrompt = `black and white coloring book page for kids, ${prompt}, Bobbie Goods style, thick bold black outlines, clean lines, whimsical and cute, kawaii style, no colors, only black lines on a white background, no text, no words, no letters.`;
     }
 
     const imagePayload = {
-      instances: [
-        { 
-          prompt: fullPrompt
-        }
-      ],
-      parameters: {
-        sampleCount: 1
-      }
+      instances: [{ prompt: fullPrompt }],
+      parameters: { sampleCount: 1 }
     };
 
     const imageResponse = await fetch(imageApiUrl, {
@@ -56,24 +63,24 @@ exports.handler = async function(event) {
 
     if (!imageResponse.ok) {
       const errorBody = await imageResponse.text();
-      console.error("Google API Error (Image):", errorBody);
       throw new Error('A API da Google retornou um erro na geração da imagem.');
     }
     
     const result = await imageResponse.json();
 
     if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+        await redis.incr(key);
+        await redis.expire(key, 86400);
+
         return {
             statusCode: 200,
             headers,
             body: JSON.stringify(result)
         };
     } else {
-        console.error("Resposta inesperada da API (Image):", JSON.stringify(result));
         throw new Error('A resposta da API de imagem não teve o formato esperado.');
     }
   } catch (error) {
-    console.error("Erro na função Generate-Image:", error);
     return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
   }
 };
