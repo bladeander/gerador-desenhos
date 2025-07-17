@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Pintura</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        #canvas-container { position: relative; width: 800px; height: 800px; margin: auto; }
+        canvas { position: absolute; top: 0; left: 0; }
+        .color-box { width: 40px; height: 40px; cursor: pointer; border: 2px solid transparent; border-radius: 50%; }
+        .color-box.active { border-color: #3b82f6; transform: scale(1.1); }
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-gray-200 flex flex-col items-center p-4">
+
+    <div class="w-full max-w-6xl bg-white rounded-lg shadow-lg p-6 mb-4">
+        <h1 class="text-2xl font-bold text-center mb-4">Pinte o seu Desenho!</h1>
+        <!-- Barra de Ferramentas -->
+        <div class="flex flex-wrap justify-center items-center gap-4 p-4 bg-gray-100 rounded-lg mb-4">
+            <!-- Paleta de Cores -->
+            <div class="flex items-center gap-2 flex-wrap" id="color-palette"></div>
+            <!-- Controlo do Pincel -->
+            <div class="flex items-center gap-2">
+                <label for="brushSize" class="font-medium">Pincel:</label>
+                <input type="range" id="brushSize" min="1" max="50" value="5" class="w-32">
+                <span id="brushSizeValue" class="font-mono w-8 text-center">5</span>
+            </div>
+            <!-- Botões de Ação -->
+            <div class="flex items-center gap-2">
+                <button id="clearBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg">Limpar</button>
+                <button id="saveBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Salvar</button>
+                <button id="printPageBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Imprimir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Área do Canvas -->
+    <div id="canvas-container" class="bg-white shadow-md">
+        <canvas id="background-canvas"></canvas> <!-- Canvas para a imagem de fundo -->
+        <canvas id="drawing-canvas"></canvas>    <!-- Canvas para pintar -->
+    </div>
+    
+    <!-- Área de impressão escondida -->
+    <div id="print-area" class="hidden"></div>
+
+<script>
+    window.addEventListener('load', () => {
+        const drawingCanvas = document.getElementById('drawing-canvas');
+        const backgroundCanvas = document.getElementById('background-canvas');
+        const ctx = drawingCanvas.getContext('2d');
+        const bgCtx = backgroundCanvas.getContext('2d');
+
+        const paletteContainer = document.getElementById('color-palette');
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        const clearBtn = document.getElementById('clearBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const printPageBtn = document.getElementById('printPageBtn');
+
+        // Paleta de cores
+        const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#008000', '#A52A2A', '#000000', '#FFFFFF'];
+        
+        colors.forEach(color => {
+            const colorBox = document.createElement('div');
+            colorBox.className = 'color-box';
+            colorBox.style.backgroundColor = color;
+            colorBox.addEventListener('click', () => {
+                ctx.strokeStyle = color;
+                document.querySelector('.color-box.active')?.classList.remove('active');
+                colorBox.classList.add('active');
+            });
+            paletteContainer.appendChild(colorBox);
+        });
+        // Ativa a primeira cor por defeito
+        paletteContainer.children[0].click();
+
+        // Carrega a imagem do armazenamento da sessão
+        const imageDataUrl = sessionStorage.getItem('paintingImage');
+        if (imageDataUrl) {
+            const img = new Image();
+            img.onload = () => {
+                // Ajusta o tamanho do canvas para o da imagem
+                const canvasContainer = document.getElementById('canvas-container');
+                const aspectRatio = img.width / img.height;
+                const containerWidth = 800; // Largura máxima
+                const canvasWidth = containerWidth;
+                const canvasHeight = containerWidth / aspectRatio;
+
+                canvasContainer.style.width = `${canvasWidth}px`;
+                canvasContainer.style.height = `${canvasHeight}px`;
+
+                drawingCanvas.width = canvasWidth;
+                drawingCanvas.height = canvasHeight;
+                backgroundCanvas.width = canvasWidth;
+                backgroundCanvas.height = canvasHeight;
+
+                // Desenha a imagem no canvas de fundo
+                bgCtx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+            };
+            img.src = imageDataUrl;
+        } else {
+            alert("Nenhuma imagem para pintar. Por favor, gere uma imagem na página principal primeiro.");
+        }
+
+        // Configurações do pincel
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = colors[0];
+        ctx.lineWidth = brushSizeInput.value;
+
+        brushSizeInput.addEventListener('input', (e) => {
+            ctx.lineWidth = e.target.value;
+            brushSizeValue.textContent = e.target.value;
+        });
+
+        // Lógica de pintura
+        let isPainting = false;
+        function startPainting(e) {
+            isPainting = true;
+            draw(e);
+        }
+        function stopPainting() {
+            isPainting = false;
+            ctx.beginPath();
+        }
+        function draw(e) {
+            if (!isPainting) return;
+            const rect = drawingCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        drawingCanvas.addEventListener('mousedown', startPainting);
+        drawingCanvas.addEventListener('mouseup', stopPainting);
+        drawingCanvas.addEventListener('mousemove', draw);
+        drawingCanvas.addEventListener('mouseout', stopPainting);
+
+        // Botão de limpar
+        clearBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+        });
+
+        // Botão de salvar
+        saveBtn.addEventListener('click', () => {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = drawingCanvas.width;
+            tempCanvas.height = drawingCanvas.height;
+
+            // Desenha a imagem de fundo e a pintura no canvas temporário
+            tempCtx.drawImage(backgroundCanvas, 0, 0);
+            tempCtx.drawImage(drawingCanvas, 0, 0);
+
+            // Cria o link para download
+            const link = document.createElement('a');
+            link.download = 'meu-desenho-pintado.png';
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+        });
+        
+        // Botão de imprimir
+        printPageBtn.addEventListener('click', () => {
+            const printArea = document.getElementById('print-area');
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = drawingCanvas.width;
+            tempCanvas.height = drawingCanvas.height;
+            tempCtx.drawImage(backgroundCanvas, 0, 0);
+            tempCtx.drawImage(drawingCanvas, 0, 0);
+            
+            const imgForPrint = new Image();
+            imgForPrint.src = tempCanvas.toDataURL('image/png');
+            imgForPrint.style.width = '100%';
+            
+            printArea.innerHTML = ''; // Limpa a área de impressão
+            printArea.appendChild(imgForPrint);
+            
+            window.print();
+        });
+    });
+</script>
+</body>
+</html>
