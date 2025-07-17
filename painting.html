@@ -39,7 +39,13 @@
         <div class="flex flex-wrap justify-center items-center gap-4 p-4 bg-gray-100 rounded-lg mb-4">
             <!-- Paleta de Cores -->
             <div class="flex items-center gap-2 flex-wrap" id="color-palette"></div>
-             <!-- Botões de Ação -->
+             <!-- Controlo da Tolerância -->
+            <div class="flex items-center gap-2">
+                <label for="tolerance" class="font-medium">Tolerância:</label>
+                <input type="range" id="tolerance" min="0" max="100" value="20" class="w-32">
+                <span id="toleranceValue" class="font-mono w-8 text-center">20</span>
+            </div>
+            <!-- Botões de Ação -->
             <div class="flex items-center gap-2">
                 <button id="undoBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Desfazer</button>
                 <button id="clearBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg">Limpar Tudo</button>
@@ -66,15 +72,17 @@
         const bgCtx = backgroundCanvas.getContext('2d', { willReadFrequently: true });
 
         const paletteContainer = document.getElementById('color-palette');
+        const toleranceInput = document.getElementById('tolerance');
+        const toleranceValue = document.getElementById('toleranceValue');
         const clearBtn = document.getElementById('clearBtn');
         const saveBtn = document.getElementById('saveBtn');
         const printPageBtn = document.getElementById('printPageBtn');
         const undoBtn = document.getElementById('undoBtn');
 
         let selectedColor = '#FF0000';
+        let tolerance = 20;
         const history = [];
 
-        // Paleta de cores
         const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#008000', '#A52A2A', '#000000', '#FFFFFF'];
         
         colors.forEach(color => {
@@ -89,6 +97,11 @@
             paletteContainer.appendChild(colorBox);
         });
         paletteContainer.children[0].click();
+        
+        toleranceInput.addEventListener('input', (e) => {
+            tolerance = parseInt(e.target.value, 10);
+            toleranceValue.textContent = e.target.value;
+        });
 
         const imageDataUrl = sessionStorage.getItem('paintingImage');
         if (imageDataUrl) {
@@ -123,22 +136,25 @@
             const b = parseInt(hex.slice(5, 7), 16);
             return { r, g, b };
         }
+        
+        function colorMatch(r1, g1, b1, r2, g2, b2) {
+            return Math.abs(r1 - r2) < tolerance && Math.abs(g1 - g2) < tolerance && Math.abs(b1 - b2) < tolerance;
+        }
 
         function floodFill(startX, startY) {
             const fillColorRgb = hexToRgb(selectedColor);
-            const bgImageData = bgCtx.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-            const drawingImageData = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
-            
+            const imageData = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height);
             const canvasWidth = drawingCanvas.width;
-            const canvasHeight = drawingCanvas.height;
-
+            
             const startPos = (startY * canvasWidth + startX) * 4;
-            const startR = bgImageData.data[startPos];
-            const startG = bgImageData.data[startPos + 1];
-            const startB = bgImageData.data[startPos + 2];
+            const startR = imageData.data[startPos];
+            const startG = imageData.data[startPos + 1];
+            const startB = imageData.data[startPos + 2];
 
-            // Se a cor inicial for a cor da linha de contorno (preto), não faz nada
-            if (startR < 128 && startG < 128 && startB < 128) return;
+            // Se a cor já for a cor de preenchimento, não faz nada
+            if (colorMatch(startR, startG, startB, fillColorRgb.r, fillColorRgb.g, fillColorRgb.b)) {
+                return;
+            }
 
             const pixelStack = [[startX, startY]];
             
@@ -147,17 +163,18 @@
                 const currentPos = (y * canvasWidth + x) * 4;
 
                 if (x < 0 || x >= canvasWidth || y < 0 || y >= canvasHeight) continue;
+                
+                // Verifica a cor do pixel atual
+                const r = imageData.data[currentPos];
+                const g = imageData.data[currentPos + 1];
+                const b = imageData.data[currentPos + 2];
 
-                // Verifica se a cor de fundo é a cor alvo (não é uma linha preta)
-                const isTarget = bgImageData.data[currentPos] > 128 || bgImageData.data[currentPos+1] > 128 || bgImageData.data[currentPos+2] > 128;
-                // Verifica se o pixel já não foi pintado com a cor de preenchimento
-                const isNotFilled = drawingImageData.data[currentPos] !== fillColorRgb.r || drawingImageData.data[currentPos + 1] !== fillColorRgb.g || drawingImageData.data[currentPos + 2] !== fillColorRgb.b;
-
-                if (isTarget && isNotFilled) {
-                    drawingImageData.data[currentPos] = fillColorRgb.r;
-                    drawingImageData.data[currentPos + 1] = fillColorRgb.g;
-                    drawingImageData.data[currentPos + 2] = fillColorRgb.b;
-                    drawingImageData.data[currentPos + 3] = 255;
+                // Se a cor do pixel atual for a cor alvo, preenche e adiciona vizinhos à pilha
+                if (colorMatch(r, g, b, startR, startG, startB)) {
+                    imageData.data[currentPos] = fillColorRgb.r;
+                    imageData.data[currentPos + 1] = fillColorRgb.g;
+                    imageData.data[currentPos + 2] = fillColorRgb.b;
+                    imageData.data[currentPos + 3] = 255;
 
                     pixelStack.push([x + 1, y]);
                     pixelStack.push([x - 1, y]);
@@ -165,7 +182,7 @@
                     pixelStack.push([x, y - 1]);
                 }
             }
-            ctx.putImageData(drawingImageData, 0, 0);
+            ctx.putImageData(imageData, 0, 0);
         }
 
         drawingCanvas.addEventListener('click', (e) => {
@@ -175,17 +192,22 @@
             const scaleY = drawingCanvas.height / rect.height;
             const x = Math.floor((e.clientX - rect.left) * scaleX);
             const y = Math.floor((e.clientY - rect.top) * scaleY);
+            
+            // ATENÇÃO: A lógica de preenchimento agora ocorre no canvas de desenho,
+            // que é sobreposto ao canvas de fundo com a imagem original.
+            // Para que funcione, primeiro copiamos a imagem de fundo para o canvas de desenho.
+            ctx.drawImage(backgroundCanvas, 0, 0);
             floodFill(x, y);
         });
 
         function saveState() {
-            if (history.length > 20) history.shift(); // Limita o histórico
+            if (history.length > 20) history.shift();
             history.push(ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height));
         }
 
         function restoreState() {
             if (history.length < 2) return;
-            history.pop(); // Remove o estado atual
+            history.pop();
             const lastState = history[history.length - 1];
             ctx.putImageData(lastState, 0, 0);
         }
