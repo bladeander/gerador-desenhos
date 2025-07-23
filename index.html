@@ -123,7 +123,8 @@
     if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
         let isRecording = false;
-        const originalPlaceholder = userInput.placeholder; // Guarda o placeholder original
+        const originalPlaceholder = userInput.placeholder;
+        let final_transcript = ''; // Variável para acumular o texto final
 
         recognition.continuous = true; // Continua a escutar mesmo com pausas
         recognition.interimResults = true; // Mostra resultados parciais enquanto fala
@@ -134,6 +135,7 @@
                 recognition.stop();
             } else {
                 userInput.value = ''; // Limpa o campo antes de começar
+                final_transcript = ''; // Limpa o transcrito final
                 recognition.start();
             }
         });
@@ -159,18 +161,18 @@
 
         recognition.onresult = (event) => {
             let interim_transcript = '';
-            let final_transcript = '';
 
             for (let i = event.resultIndex; i < event.results.length; ++i) {
+                const transcript = event.results[i][0].transcript;
                 if (event.results[i].isFinal) {
-                    final_transcript += event.results[i][0].transcript;
+                    final_transcript += transcript + ' '; // Acumula o texto final com um espaço
                 } else {
-                    interim_transcript += event.results[i][0].transcript;
+                    interim_transcript += transcript;
                 }
             }
             
-            // Atualiza o campo de texto com o resultado final ou parcial
-            userInput.value = final_transcript || interim_transcript;
+            // Atualiza o campo de texto com o texto final acumulado mais o resultado parcial atual
+            userInput.value = final_transcript + interim_transcript;
         };
 
     } else {
