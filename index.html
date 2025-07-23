@@ -123,6 +123,7 @@
     if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
         let isRecording = false;
+        const originalPlaceholder = userInput.placeholder; // Guarda o placeholder original
 
         recognition.continuous = true; // Continua a escutar mesmo com pausas
         recognition.interimResults = true; // Mostra resultados parciais enquanto fala
@@ -140,16 +141,19 @@
         recognition.onstart = () => {
             isRecording = true;
             micBtn.classList.add('recording', 'text-pink-500');
+            userInput.placeholder = 'A escutar... Fale agora.'; // Altera o placeholder
         };
 
         recognition.onend = () => {
             isRecording = false;
             micBtn.classList.remove('recording', 'text-pink-500');
+            userInput.placeholder = originalPlaceholder; // Restaura o placeholder
         };
 
         recognition.onerror = (event) => {
             isRecording = false;
             micBtn.classList.remove('recording', 'text-pink-500');
+            userInput.placeholder = originalPlaceholder; // Restaura o placeholder em caso de erro
             alert(`Erro no reconhecimento de voz: ${event.error}`);
         };
 
