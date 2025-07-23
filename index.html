@@ -98,7 +98,7 @@
     const downloadBtn = document.getElementById('downloadBtn');
     const printBtn = document.getElementById('printBtn');
     const paintBtn = document.getElementById('paintBtn');
-    const micBtn = document.getElementById('micBtn'); // NOVO
+    const micBtn = document.getElementById('micBtn');
     
     generateBtn.addEventListener('click', generateImage);
     userInput.addEventListener('keyup', (event) => {
@@ -118,16 +118,27 @@
         }
     });
 
-    // NOVO: Lógica para o reconhecimento de voz
+    // Lógica para o reconhecimento de voz com toggle
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
+        let isRecording = false; // Variável para controlar o estado da gravação
+
         recognition.lang = 'pt-BR';
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
         micBtn.addEventListener('click', () => {
-            recognition.start();
+            if (isRecording) {
+                recognition.stop();
+                // A interface será atualizada pelo evento 'end'
+            } else {
+                recognition.start();
+            }
+        });
+
+        recognition.addEventListener('start', () => {
+            isRecording = true;
             micBtn.classList.add('recording', 'text-pink-500');
         });
 
@@ -139,15 +150,14 @@
             userInput.value = transcript;
         });
 
-        recognition.addEventListener('speechend', () => {
-            recognition.stop();
-        });
-
         recognition.addEventListener('end', () => {
+            isRecording = false;
             micBtn.classList.remove('recording', 'text-pink-500');
         });
 
         recognition.addEventListener('error', (e) => {
+            isRecording = false; // Garante que o estado é reiniciado em caso de erro
+            micBtn.classList.remove('recording', 'text-pink-500');
             alert(`Erro no reconhecimento de voz: ${e.error}`);
         });
     } else {
