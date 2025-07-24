@@ -118,61 +118,65 @@
         }
     });
 
-    // Lógica de reconhecimento de voz melhorada
+    // Lógica de reconhecimento de voz "pressione para falar"
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
         let isRecording = false;
         const originalPlaceholder = userInput.placeholder;
-        let final_transcript = ''; // Variável para acumular o texto final
 
-        recognition.continuous = true; // Continua a escutar mesmo com pausas
-        recognition.interimResults = true; // Mostra resultados parciais enquanto fala
+        recognition.continuous = false; // Não precisa ser contínuo
+        recognition.interimResults = true;
         recognition.lang = 'pt-BR';
-
-        micBtn.addEventListener('click', () => {
-            if (isRecording) {
-                recognition.stop();
-            } else {
-                userInput.value = ''; // Limpa o campo antes de começar
-                final_transcript = ''; // Limpa o transcrito final
+        
+        const startRecording = (e) => {
+            e.preventDefault();
+            if (!isRecording) {
+                userInput.value = '';
                 recognition.start();
             }
-        });
+        };
+
+        const stopRecording = () => {
+            if (isRecording) {
+                recognition.stop();
+            }
+        };
+
+        // Eventos para Desktop
+        micBtn.addEventListener('mousedown', startRecording);
+        micBtn.addEventListener('mouseup', stopRecording);
+        micBtn.addEventListener('mouseleave', stopRecording); // Para o caso de o rato sair do botão
+
+        // Eventos para Telemóveis
+        micBtn.addEventListener('touchstart', startRecording);
+        micBtn.addEventListener('touchend', stopRecording);
 
         recognition.onstart = () => {
             isRecording = true;
             micBtn.classList.add('recording', 'text-pink-500');
-            userInput.placeholder = 'A escutar... Fale agora.'; // Altera o placeholder
+            userInput.placeholder = 'A escutar... Fale agora.';
         };
 
         recognition.onend = () => {
             isRecording = false;
             micBtn.classList.remove('recording', 'text-pink-500');
-            userInput.placeholder = originalPlaceholder; // Restaura o placeholder
+            userInput.placeholder = originalPlaceholder;
         };
 
         recognition.onerror = (event) => {
             isRecording = false;
             micBtn.classList.remove('recording', 'text-pink-500');
-            userInput.placeholder = originalPlaceholder; // Restaura o placeholder em caso de erro
-            alert(`Erro no reconhecimento de voz: ${event.error}`);
+            userInput.placeholder = originalPlaceholder;
+            console.error(`Erro no reconhecimento de voz: ${event.error}`);
         };
 
         recognition.onresult = (event) => {
-            let interim_transcript = '';
-
+            let transcript = '';
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-                const transcript = event.results[i][0].transcript;
-                if (event.results[i].isFinal) {
-                    final_transcript += transcript + ' '; // Acumula o texto final com um espaço
-                } else {
-                    interim_transcript += transcript;
-                }
+                transcript += event.results[i][0].transcript;
             }
-            
-            // Atualiza o campo de texto com o texto final acumulado mais o resultado parcial atual
-            userInput.value = final_transcript + interim_transcript;
+            userInput.value = transcript;
         };
 
     } else {
